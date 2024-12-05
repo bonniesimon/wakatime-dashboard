@@ -13,44 +13,16 @@ import {
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
-const WakaTimeDashboard = () => {
-  // Sample data - replace with your actual data
-  const sampleData = {
-    days: [
-      {
-        date: "2019-10-17",
-        grand_total: {
-          hours: 4,
-          minutes: 30,
-          total_seconds: 16200,
-        },
-        languages: [
-          {
-            name: "JavaScript",
-            total_seconds: 8100,
-          },
-          {
-            name: "CSS",
-            total_seconds: 4050,
-          },
-          {
-            name: "HTML",
-            total_seconds: 4050,
-          },
-        ],
-      },
-      // Add more days here
-    ],
-  };
+import wakatimeData from "../../data/wakatime.json";
 
-  // Process data for daily hours chart
-  const dailyData = sampleData.days.map((day) => ({
+const WakaTimeDashboard = () => {
+  const dailyData = wakatimeData.days.map((day) => ({
     date: day.date,
     hours: (day.grand_total.total_seconds / 3600).toFixed(2),
   }));
 
   // Process data for language distribution
-  const languageData = sampleData.days.reduce((acc, day) => {
+  const languageData = wakatimeData.days.reduce((acc, day) => {
     day.languages.forEach((lang) => {
       const existing = acc.find((item) => item.name === lang.name);
       if (existing) {
