@@ -11,7 +11,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { Trophy } from "lucide-react";
+import { Trophy, Clock } from "lucide-react";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
@@ -91,7 +91,62 @@ const WakaTimeDashboard = () => {
       }, []);
   }, [data, selectedMonth]);
 
-  // Calculate top coding days
+  // Calculate last 7 days stats
+  const lastSevenDaysStats = useMemo(() => {
+    if (!data?.days) return null;
+
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+
+    const last7Days = data.days
+      .filter((day) => {
+        const date = new Date(day.date);
+        return date >= sevenDaysAgo && date <= today;
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (last7Days.length === 0) return null;
+
+    const totalSeconds = last7Days.reduce(
+      (sum, day) => sum + day.grand_total.total_seconds,
+      0
+    );
+    const totalHours = (totalSeconds / 3600).toFixed(2);
+    const avgHoursPerDay = (totalSeconds / (3600 * last7Days.length)).toFixed(
+      2
+    );
+
+    // Calculate language distribution for last 7 days
+    const languages = last7Days.reduce((acc, day) => {
+      day.languages.forEach((lang) => {
+        if (!acc[lang.name]) acc[lang.name] = 0;
+        acc[lang.name] += lang.total_seconds;
+      });
+      return acc;
+    }, {});
+
+    const topLanguages = Object.entries(languages)
+      .map(([name, seconds]) => ({
+        name,
+        hours: (seconds / 3600).toFixed(2),
+      }))
+      .sort((a, b) => parseFloat(b.hours) - parseFloat(a.hours))
+      .slice(0, 3);
+
+    return {
+      totalHours,
+      avgHoursPerDay,
+      daysTracked: last7Days.length,
+      topLanguages,
+      dailyBreakdown: last7Days.map((day) => ({
+        date: day.date,
+        hours: (day.grand_total.total_seconds / 3600).toFixed(2),
+      })),
+    };
+  }, [data]);
+
+  // Rest of the existing calculations...
   const topCodingDays = useMemo(() => {
     if (!data?.days) return [];
 
@@ -175,6 +230,73 @@ const WakaTimeDashboard = () => {
 
         {data && selectedMonth ? (
           <div className="space-y-8">
+            {/* Last 7 Days Stats */}
+            {lastSevenDaysStats && (
+              <div className="bg-blue-50 rounded-lg p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="text-blue-600" size={24} />
+                  <h3 className="text-lg font-semibold">
+                    Last 7 Days Activity
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-600">
+                      Total Hours
+                    </h4>
+                    <p className="text-2xl font-bold">
+                      {lastSevenDaysStats.totalHours}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-600">
+                      Avg Hours/Day
+                    </h4>
+                    <p className="text-2xl font-bold">
+                      {lastSevenDaysStats.avgHoursPerDay}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-600">
+                      Days Tracked
+                    </h4>
+                    <p className="text-2xl font-bold">
+                      {lastSevenDaysStats.daysTracked}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <h4 className="text-sm font-medium text-gray-600">
+                      Top Languages
+                    </h4>
+                    <div className="mt-2">
+                      {lastSevenDaysStats.topLanguages.map((lang) => (
+                        <div
+                          key={lang.name}
+                          className="flex justify-between text-sm"
+                        >
+                          <span>{lang.name}</span>
+                          <span>{lang.hours}h</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <BarChart
+                    width={800}
+                    height={200}
+                    data={lastSevenDaysStats.dailyBreakdown}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="hours" fill="#3b82f6" name="Hours Coded" />
+                  </BarChart>
+                </div>
+              </div>
+            )}
+
             {/* Monthly Stats */}
             {monthlyStats && (
               <div className="grid grid-cols-3 gap-4">
@@ -203,7 +325,7 @@ const WakaTimeDashboard = () => {
               </div>
             )}
 
-            {/* Top Coding Days */}
+            {/* Rest of the existing components... */}
             <div className="bg-yellow-50 rounded-lg p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Trophy className="text-yellow-600" size={24} />
@@ -240,7 +362,6 @@ const WakaTimeDashboard = () => {
               </div>
             </div>
 
-            {/* Daily Programming Hours */}
             <div>
               <h3 className="text-lg font-semibold mb-4">
                 Daily Programming Hours
@@ -257,7 +378,6 @@ const WakaTimeDashboard = () => {
               </div>
             </div>
 
-            {/* Language Distribution */}
             <div>
               <h3 className="text-lg font-semibold mb-4">
                 Language Distribution
