@@ -16,7 +16,6 @@ import { Trophy, Clock } from "lucide-react";
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
 const WakaTimeDashboard = () => {
-  // ... (previous state and handlers remain the same) ...
   const [data, setData] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState("");
 
@@ -92,7 +91,6 @@ const WakaTimeDashboard = () => {
       }, []);
   }, [data, selectedMonth]);
 
-  // Updated topCodingDays to filter by selected month
   const topCodingDays = useMemo(() => {
     if (!data?.days || !selectedMonth) return [];
 
@@ -111,7 +109,7 @@ const WakaTimeDashboard = () => {
       }))
       .sort((a, b) => parseFloat(b.hours) - parseFloat(a.hours))
       .slice(0, 5);
-  }, [data, selectedMonth]); // Added selectedMonth dependency
+  }, [data, selectedMonth]);
 
   const lastSevenDaysStats = useMemo(() => {
     if (!data?.days) return null;
