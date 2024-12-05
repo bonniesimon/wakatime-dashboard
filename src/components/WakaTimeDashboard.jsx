@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -16,6 +16,7 @@ import { Trophy, Clock } from "lucide-react";
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
 const WakaTimeDashboard = () => {
+  // ... (previous state and handlers remain the same) ...
   const [data, setData] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState("");
 
@@ -91,7 +92,27 @@ const WakaTimeDashboard = () => {
       }, []);
   }, [data, selectedMonth]);
 
-  // Calculate last 7 days stats
+  // Updated topCodingDays to filter by selected month
+  const topCodingDays = useMemo(() => {
+    if (!data?.days || !selectedMonth) return [];
+
+    return [...data.days]
+      .filter((day) => day.date.startsWith(selectedMonth))
+      .map((day) => ({
+        date: day.date,
+        hours: (day.grand_total.total_seconds / 3600).toFixed(2),
+        languages: day.languages
+          .sort((a, b) => b.total_seconds - a.total_seconds)
+          .slice(0, 3)
+          .map((lang) => ({
+            name: lang.name,
+            hours: (lang.total_seconds / 3600).toFixed(2),
+          })),
+      }))
+      .sort((a, b) => parseFloat(b.hours) - parseFloat(a.hours))
+      .slice(0, 5);
+  }, [data, selectedMonth]); // Added selectedMonth dependency
+
   const lastSevenDaysStats = useMemo(() => {
     if (!data?.days) return null;
 
@@ -117,7 +138,6 @@ const WakaTimeDashboard = () => {
       2
     );
 
-    // Calculate language distribution for last 7 days
     const languages = last7Days.reduce((acc, day) => {
       day.languages.forEach((lang) => {
         if (!acc[lang.name]) acc[lang.name] = 0;
@@ -144,26 +164,6 @@ const WakaTimeDashboard = () => {
         hours: (day.grand_total.total_seconds / 3600).toFixed(2),
       })),
     };
-  }, [data]);
-
-  // Rest of the existing calculations...
-  const topCodingDays = useMemo(() => {
-    if (!data?.days) return [];
-
-    return [...data.days]
-      .map((day) => ({
-        date: day.date,
-        hours: (day.grand_total.total_seconds / 3600).toFixed(2),
-        languages: day.languages
-          .sort((a, b) => b.total_seconds - a.total_seconds)
-          .slice(0, 3)
-          .map((lang) => ({
-            name: lang.name,
-            hours: (lang.total_seconds / 3600).toFixed(2),
-          })),
-      }))
-      .sort((a, b) => parseFloat(b.hours) - parseFloat(a.hours))
-      .slice(0, 5);
   }, [data]);
 
   const monthlyStats = useMemo(() => {
@@ -325,11 +325,17 @@ const WakaTimeDashboard = () => {
               </div>
             )}
 
-            {/* Rest of the existing components... */}
+            {/* Top Coding Days (now filtered by month) */}
             <div className="bg-yellow-50 rounded-lg p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Trophy className="text-yellow-600" size={24} />
-                <h3 className="text-lg font-semibold">Top Coding Days</h3>
+                <h3 className="text-lg font-semibold">
+                  Top Coding Days -{" "}
+                  {new Date(selectedMonth + "-01").toLocaleString("default", {
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {topCodingDays.map((day, index) => (
@@ -362,6 +368,7 @@ const WakaTimeDashboard = () => {
               </div>
             </div>
 
+            {/* Daily Programming Hours */}
             <div>
               <h3 className="text-lg font-semibold mb-4">
                 Daily Programming Hours
@@ -378,6 +385,7 @@ const WakaTimeDashboard = () => {
               </div>
             </div>
 
+            {/* Language Distribution */}
             <div>
               <h3 className="text-lg font-semibold mb-4">
                 Language Distribution
