@@ -1,7 +1,11 @@
-import "./App.css";
+import WakaTimeDashboard from "./components/WakaTimeDashboard";
 
 function App() {
-  return <p> Hellow world</p>;
+  return (
+    <div>
+      <WakaTimeDashboard />
+    </div>
+  );
 }
 
 export default App;
